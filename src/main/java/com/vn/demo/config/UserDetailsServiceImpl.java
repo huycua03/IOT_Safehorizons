@@ -30,9 +30,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("Tài khoản đã bị khóa: " + username);
         }
 
+        // Log role information for debugging
+        System.out.println("Found user: " + username);
+        System.out.println("User roles: " + user.getRoles().stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.joining(", ")));
+
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                 .map(Role::getRoleName)
-                .map(SimpleGrantedAuthority::new)
+                .map(roleName -> {
+                    System.out.println("Adding authority: " + roleName);
+                    return new SimpleGrantedAuthority(roleName);
+                })
                 .collect(Collectors.toList());
 
         return new org.springframework.security.core.userdetails.User(
