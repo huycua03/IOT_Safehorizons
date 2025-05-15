@@ -3,6 +3,7 @@ package com.vn.demo.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,13 +19,13 @@ public class DeviceGroup {
     @Column(name = "group_name")
     private String groupName;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User teamLead;
 
-    @OneToMany(mappedBy = "deviceGroup", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Device> devices;
+    @OneToMany(mappedBy = "deviceGroup", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+    private List<Device> devices = new ArrayList<>();
 
-    @OneToMany(mappedBy = "deviceGroup", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Profile> profiles;
+    @OneToMany(mappedBy = "deviceGroup", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+    private List<Profile> profiles = new ArrayList<>();
 }

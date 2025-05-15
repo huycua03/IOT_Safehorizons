@@ -15,20 +15,20 @@ public class Profile {
     @Column(name = "profile_id")
     private int profileId;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "command_list_id", referencedColumnName = "command_list_id", nullable = false)
     private CommandList commandList;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "group_id", referencedColumnName = "group_id", nullable = false)
     private DeviceGroup deviceGroup;
 
     @Column(name = "name")
     private String name;
 
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "profile", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<OperatorProfile> operatorProfiles;
 
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "profile", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Assignment> assignments;
 }

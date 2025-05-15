@@ -84,22 +84,4 @@ public class AuthController {
         
         return "reset-password";
     }
-
-    @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        System.out.println("Đã vào dashboard controller");
-        
-        // Get current authentication
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("Current authenticated user: " + auth.getName());
-        System.out.println("Authorities: " + auth.getAuthorities());
-        
-        // Truyền danh sách vai trò vào view
-        model.addAttribute("roles", roleRepository.findAll());
-        
-        // Truyền danh sách người dùng vào view cho admin
-        model.addAttribute("users", userRepository.findAll());
-        
-        return "dashboard";
-    }
 } 

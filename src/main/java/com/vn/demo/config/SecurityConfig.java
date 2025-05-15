@@ -79,7 +79,7 @@ public class SecurityConfig {
                     }
                     
                     if (role.equals("ROLE_TEAMLEAD")) {
-                        return "/teamlead/teamlead";
+                        return "/teamlead/dashboard";
                     }
                     
                     if (role.equals("ROLE_OPERATOR")) {
