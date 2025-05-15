@@ -108,19 +108,19 @@ public class UserController {
         
         if (user == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Kiểm tra mật khẩu hiện tại
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu hiện tại không đúng!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Kiểm tra xác nhận mật khẩu mới
         if (!newPassword.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Xác nhận mật khẩu mới không khớp!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Cập nhật mật khẩu mới
@@ -128,7 +128,7 @@ public class UserController {
         userRepository.save(user);
         
         redirectAttributes.addFlashAttribute("successMessage", "Mật khẩu đã được cập nhật thành công!");
-        return "redirect:/dashboard";
+        return "redirect:/admin/dashboard";
     }
     
     /**
@@ -144,20 +144,20 @@ public class UserController {
         // Kiểm tra username đã tồn tại chưa
         if (userRepository.existsByUser_name(username)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Tên đăng nhập đã tồn tại!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Kiểm tra email đã tồn tại chưa
         if (userRepository.existsByEmail(email)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Email đã tồn tại!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Tìm role
         Role role = roleRepository.findById(roleId).orElse(null);
         if (role == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Quyền không hợp lệ!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Tạo user mới
@@ -176,7 +176,7 @@ public class UserController {
         userRepository.save(newUser);
         
         redirectAttributes.addFlashAttribute("successMessage", "Tạo người dùng thành công!");
-        return "redirect:/dashboard";
+        return "redirect:/admin/dashboard";
     }
     
     /**
@@ -193,13 +193,13 @@ public class UserController {
         
         if (user == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Kiểm tra xác nhận mật khẩu mới
         if (!newPassword.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Xác nhận mật khẩu mới không khớp!");
-            return "redirect:/dashboard";
+            return "redirect:/admin/dashboard";
         }
         
         // Cập nhật mật khẩu mới
@@ -207,6 +207,6 @@ public class UserController {
         userRepository.save(user);
         
         redirectAttributes.addFlashAttribute("successMessage", "Mật khẩu của người dùng " + user.getUser_name() + " đã được cập nhật thành công!");
-        return "redirect:/dashboard";
+        return "redirect:/admin/dashboard";
     }
 } 
