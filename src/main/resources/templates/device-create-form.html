@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Device - IOT Safehorizons</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f5f5; }
+        .navbar { background-color: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 22px; font-weight: 500; }
+        .navbar-actions { display: flex; align-items: center; }
+        .navbar-actions a { color: white; margin-left: 15px; text-decoration: none; }
+        .navbar-actions form { margin-left: 15px; }
+        .btn-logout { background-color: transparent; border: 1px solid white; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .btn-logout:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .content { padding: 20px; max-width: 800px; margin: 20px auto; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .card h2 { margin-bottom: 15px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        .btn-primary { background-color: #2980b9; border: none; color: white; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn-primary:hover { background-color: #2471a3; }
+        .btn-secondary { background-color: #95a5a6; border: none; color: white; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+        .btn-secondary:hover { background-color: #7f8c8d; }
+        .action-buttons { display: flex; justify-content: flex-start; margin-top: 20px; }
+        .vm-list { margin-top: 20px; }
+        .vm-list table { width: 100%; border-collapse: collapse; }
+        .vm-list th, .vm-list td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        .vm-list th { background-color: #f9f9f9; }
+        .vm-list tr:hover { background-color: #f5f5f5; }
+        .alert { padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; }
+        .select-button { background-color: #2980b9; border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 5px; }
+        .select-button:hover { background-color: #2471a3; }
+        .status-online { color: #27ae60; }
+        .status-offline { color: #e74c3c; }
+        .info-text { font-size: 14px; color: #555; margin-top: 5px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>IOT Safehorizons</h1>
+        <div class="navbar-actions">
+            <a th:href="@{/teamlead/dashboard}">Dashboard</a>
+            <a th:href="@{/teamlead/device/list}">Devices</a>
+            <form th:action="@{/logout}" method="post">
+                <button class="btn-logout" type="submit">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="card">
+            <h2>Create New Device</h2>
+            
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+            
+            <form th:action="@{/teamlead/device/create}" method="post">
+                <div class="form-group">
+                    <label for="deviceName">Device Name</label>
+                    <input type="text" id="deviceName" name="deviceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="ipAddress">IP Address</label>
+                    <input type="text" id="ipAddress" name="ipAddress" placeholder="IP will be assigned after scanning">
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn-secondary" id="scanBtn">Scan Virtual Machines</button>
+                    <button type="submit" class="btn-primary">Create Device</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card vm-list" style="display: none;" id="vmListCard">
+            <h2>Available Virtual Machines</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP Address</th>
+                        <th>Name/Hostname</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="vmTable">
+                    <!-- Virtual machines will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scanBtn = document.getElementById('scanBtn');
+            const vmListCard = document.getElementById('vmListCard');
+            const vmTable = document.getElementById('vmTable');
+            const ipAddressInput = document.getElementById('ipAddress');
+            const deviceNameInput = document.getElementById('deviceName');
+            
+            scanBtn.addEventListener('click', function() {
+                // Show loading in the table
+                vmListCard.style.display = 'block';
+                vmTable.innerHTML = '<tr><td colspan="4">Scanning for virtual machines and Docker containers...</td></tr>';
+                
+                // Make API call to scan the network
+                fetch('/api/device/scan')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok, status: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Scan response:', data);
+                        
+                        // Clear the table
+                        vmTable.innerHTML = '';
+                        
+                        if (!data || data.length === 0) {
+                            vmTable.innerHTML = '<tr><td colspan="4">No virtual machines or containers found</td></tr>';
+                            return;
+                        }
+                        
+                        // Add each VM/container to the table
+                        data.forEach(vm => {
+                            const row = document.createElement('tr');
+                            
+                            // IP Address
+                            const ipCell = document.createElement('td');
+                            ipCell.textContent = vm.ip || 'No IP';
+                            row.appendChild(ipCell);
+                            
+                            // Name/Hostname
+                            const nameCell = document.createElement('td');
+                            nameCell.textContent = vm.name || vm.hostname || 'Unnamed';
+                            row.appendChild(nameCell);
+                            
+                            // Status
+                            const statusCell = document.createElement('td');
+                            const statusText = vm.status || 'Unknown';
+                            statusCell.textContent = statusText;
+                            statusCell.className = statusText === 'Online' ? 'status-online' : 'status-offline';
+                            row.appendChild(statusCell);
+                            
+                            // Action
+                            const actionCell = document.createElement('td');
+                            const selectBtn = document.createElement('button');
+                            selectBtn.textContent = 'Select';
+                            selectBtn.className = 'select-button';
+                            selectBtn.addEventListener('click', function() {
+                                if (vm.ip) {
+                                    ipAddressInput.value = vm.ip;
+                                }
+                                
+                                // Also set the device name if it's not already set
+                                if (!deviceNameInput.value && (vm.name || vm.hostname)) {
+                                    deviceNameInput.value = vm.name || vm.hostname;
+                                }
+                                
+                                // Scroll back to the form
+                                document.querySelector('.card').scrollIntoView({behavior: 'smooth'});
+                            });
+                            actionCell.appendChild(selectBtn);
+                            
+                            row.appendChild(actionCell);
+                            vmTable.appendChild(row);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error scanning for devices:', error);
+                        vmTable.innerHTML = '<tr><td colspan="4">Error scanning network: ' + error.message + '</td></tr>';
+                    });
+            });
+        });
+    </script>
+</body>
+</html> 
