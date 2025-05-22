@@ -22,4 +22,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.roleName = 'ROLE_OPERATOR'")
     List<User> findOperators();
+    
+    @Query("SELECT DISTINCT u FROM User u JOIN Session s ON s.operator.user_id = u.user_id " +
+           "WHERE s.status = 'ACTIVE'")
+    List<User> findOperatorsWithActiveSessions();
 }

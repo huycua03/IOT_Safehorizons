@@ -86,7 +86,7 @@ public class SecurityConfig {
                         return "/operator/dashboard";
                     }
                     
-                    if (role.equals("SUPERVISOR")) {
+                    if (role.equals("ROLE_SUPERVISOR")) {
                         return "/supervisor/dashboard";
                     }
                 }

@@ -39,5 +39,13 @@ public class InitialRoleSetup implements CommandLineRunner {
             roleRepository.save(operatorRole);
             System.out.println("Vai trò ROLE_OPERATOR đã được tạo");
         }
+
+        // Tạo vai trò ROLE_SUPERVISOR nếu chưa tồn tại
+        if (roleRepository.findByRoleName("ROLE_SUPERVISOR") == null) {
+            Role supervisorRole = new Role();
+            supervisorRole.setRoleName("ROLE_SUPERVISOR");
+            roleRepository.save(supervisorRole);
+            System.out.println("Vai trò ROLE_SUPERVISOR đã được tạo");
+        }
     }
 } 

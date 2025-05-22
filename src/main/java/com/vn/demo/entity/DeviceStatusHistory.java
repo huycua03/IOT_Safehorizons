@@ -28,4 +28,7 @@ public class DeviceStatusHistory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;
+    
+    @Column(name = "notes")
+    private String notes;
 }

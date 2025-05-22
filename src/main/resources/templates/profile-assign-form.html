@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assign Profile to User - IOT Safehorizons</title>
+    <title>Assign Profile to Users - IOT Safehorizons</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f5f5f5; }
@@ -30,6 +30,12 @@
         .detail-info p { margin-bottom: 8px; }
         .detail-info strong { font-weight: 600; margin-right: 5px; }
         .empty-message { text-align: center; padding: 30px; color: #777; }
+        .user-checkbox-list { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+        .user-checkbox-item { display: flex; align-items: center; margin-bottom: 8px; padding: 5px; }
+        .user-checkbox-item:hover { background-color: #f5f5f5; }
+        .user-checkbox-item input[type="checkbox"] { margin-right: 10px; }
+        .select-actions { margin-bottom: 10px; display: flex; gap: 10px; }
+        .select-actions button { background-color: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -51,7 +57,7 @@
 
     <div class="content">
         <div class="card">
-            <h3>Assign Profile to User</h3>
+            <h3>Assign Profile to Multiple Users</h3>
             
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -64,26 +70,55 @@
                 <p><strong>Command List:</strong> <span th:text="${profile.commandList != null ? profile.commandList.name : 'N/A'}">Commands 1</span></p>
             </div>
             
-            <form th:action="@{/teamlead/profile/assign}" method="post">
+            <form th:action="@{/teamlead/profile/assign-multiple}" method="post">
                 <input type="hidden" name="profileId" th:value="${profile.profileId}">
                 
                 <div class="form-group">
-                    <label for="userId">Select User to Assign</label>
-                    <select id="userId" name="userId" required>
-                        <option value="">-- Select User --</option>
-                        <option th:each="operator : ${operators}" 
-                                th:value="${operator.user_id}" 
-                                th:text="${operator.user_name}">operator1</option>
-                    </select>
+                    <label for="userIds">Select Users to Assign</label>
+                    
+                    <div class="select-actions">
+                        <button type="button" id="selectAllBtn">Select All</button>
+                        <button type="button" id="deselectAllBtn">Deselect All</button>
+                    </div>
+                    
+                    <div class="user-checkbox-list" th:if="${!#lists.isEmpty(operators)}">
+                        <div class="user-checkbox-item" th:each="operator : ${operators}">
+                            <input type="checkbox" name="userIds" th:value="${operator.user_id}" 
+                                   th:id="'user-' + ${operator.user_id}">
+                            <label th:for="'user-' + ${operator.user_id}" th:text="${operator.user_name}">operator1</label>
+                        </div>
+                    </div>
                     <div th:if="${#lists.isEmpty(operators)}" class="empty-message">
                         No operators available.
                     </div>
                 </div>
                 
-                <button type="submit" class="btn-primary">Assign Profile</button>
+                <button type="submit" class="btn-primary">Assign Profile to Selected Users</button>
                 <a th:href="@{/teamlead/profile/list}" class="btn-back">Back to Profiles</a>
             </form>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const deselectAllBtn = document.getElementById('deselectAllBtn');
+            const checkboxes = document.querySelectorAll('input[name="userIds"]');
+            
+            selectAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+            
+            deselectAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            });
+        });
+    </script>
 </body>
 </html> 

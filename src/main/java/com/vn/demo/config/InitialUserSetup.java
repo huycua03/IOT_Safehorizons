@@ -92,5 +92,26 @@ public class InitialUserSetup implements CommandLineRunner {
             
             System.out.println("Tài khoản operator mặc định đã được tạo với mật khẩu được mã hóa BCrypt");
         }
+        
+        // Tạo tài khoản supervisor mặc định nếu chưa tồn tại
+        if (!userRepository.existsByUser_name("supervisor")) {
+            User supervisorUser = new User();
+            supervisorUser.setUser_name("supervisor");
+            // Đảm bảo mật khẩu được mã hóa bằng BCrypt
+            String encodedPassword = passwordEncoder.encode("supervisor123");
+            supervisorUser.setPassword(encodedPassword);
+            supervisorUser.setEmail("supervisor@example.com");
+            supervisorUser.set_active(true);
+            
+            Role supervisorRole = roleRepository.findByRoleName("ROLE_SUPERVISOR");
+            
+            List<Role> roles = new ArrayList<>();
+            roles.add(supervisorRole);
+            supervisorUser.setRoles(roles);
+            
+            userRepository.save(supervisorUser);
+            
+            System.out.println("Tài khoản supervisor mặc định đã được tạo với mật khẩu được mã hóa BCrypt");
+        }
     }
 } 

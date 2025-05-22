@@ -720,6 +720,90 @@ public class TeamLeadController {
         return "redirect:/teamlead/dashboard";
     }
     
+    // Gán profile cho nhiều người dùng cùng lúc
+    @PostMapping("/profile/assign-multiple")
+    public String assignProfileToMultipleUsers(@RequestParam Integer profileId,
+                                             @RequestParam(required = false) List<Integer> userIds,
+                                             RedirectAttributes redirectAttributes) {
+        // Kiểm tra xem có profile và danh sách người dùng không
+        Profile profile = profileRepository.findById(profileId).orElse(null);
+        
+        if (profile == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy profile!");
+            return "redirect:/teamlead/profile/list";
+        }
+        
+        // Kiểm tra xem đã chọn người dùng nào chưa
+        if (userIds == null || userIds.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn ít nhất một người dùng để gán profile!");
+            return "redirect:/teamlead/profile/assign?profileId=" + profileId;
+        }
+        
+        try {
+            // Lấy thông tin người dùng hiện tại (Team Lead) làm người gán
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User teamLead = userRepository.findByUser_name(username).orElse(null);
+            
+            int successCount = 0;
+            int existingCount = 0;
+            
+            for (Integer userId : userIds) {
+                User user = userRepository.findById(userId).orElse(null);
+                
+                if (user == null) {
+                    continue; // Bỏ qua người dùng không tồn tại
+                }
+                
+                // Kiểm tra xem profile đã được gán cho người dùng này chưa
+                boolean alreadyAssigned = false;
+                if (user.getOperatorProfiles() != null) {
+                    for (OperatorProfile op : user.getOperatorProfiles()) {
+                        if (op.getProfile().getProfileId() == profileId) {
+                            alreadyAssigned = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (alreadyAssigned) {
+                    existingCount++;
+                    continue; // Bỏ qua nếu đã được gán
+                }
+                
+                // Tạo mới OperatorProfile
+                OperatorProfile operatorProfile = new OperatorProfile();
+                OperatorProfileId id = new OperatorProfileId(profileId, userId);
+                operatorProfile.setId(id);
+                operatorProfile.setOperator(user);
+                operatorProfile.setProfile(profile);
+                operatorProfile.setAssignedBy(teamLead);
+                operatorProfile.setAssignedAt(LocalDateTime.now());
+                
+                // Lưu OperatorProfile
+                operatorProfileRepository.save(operatorProfile);
+                successCount++;
+            }
+            
+            // Tạo thông báo phù hợp dựa trên kết quả
+            if (successCount > 0) {
+                String message = "Đã gán profile cho " + successCount + " người dùng thành công!";
+                if (existingCount > 0) {
+                    message += " (Có " + existingCount + " người dùng đã được gán profile này trước đó)";
+                }
+                redirectAttributes.addFlashAttribute("successMessage", message);
+            } else if (existingCount > 0) {
+                redirectAttributes.addFlashAttribute("warningMessage", "Tất cả " + existingCount + " người dùng đã được gán profile này trước đó!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không thể gán profile cho bất kỳ người dùng nào!");
+            }
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi gán profile: " + e.getMessage());
+        }
+        
+        return "redirect:/teamlead/profile/view/" + profileId;
+    }
+    
     // Thêm phương thức mới để xóa profile
     @GetMapping("/profile/delete/{profileId}")
     @Transactional
