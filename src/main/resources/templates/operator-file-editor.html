@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Editor - IOT Safehorizons</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; }
+        .navbar { background-color: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 1.5rem; margin: 0; }
+        .navbar-actions { display: flex; align-items: center; gap: 1rem; }
+        .navbar-actions a { color: white; text-decoration: none; font-size: 0.9rem; }
+        .navbar-actions a:hover { text-decoration: underline; }
+        .navbar-actions span { color: #17a2b8; margin: 0 1rem; font-weight: bold; }
+        .navbar-actions button { background: none; border: none; color: #dc3545; cursor: pointer; font-size: 0.9rem; }
+        .btn-logout { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .btn-logout:hover { background: #c82333; }
+        
+        .content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .card { background-color: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .alert { padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .alert-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        
+        h3 { margin-bottom: 1.5rem; color: #343a40; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #495057; }
+        select, input[type="text"], textarea { 
+            width: 100%; 
+            padding: 0.5rem; 
+            border: 1px solid #ced4da; 
+            border-radius: 4px; 
+        }
+        textarea { 
+            min-height: 200px; 
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .editor-container {
+            display: flex;
+            gap: 20px;
+        }
+        .editor-left {
+            flex: 1;
+        }
+        .editor-right {
+            flex: 1;
+        }
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre;
+        }
+        .output {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { 
+            background-color: #007bff; 
+            color: white; 
+        }
+        .btn-success { 
+            background-color: #28a745; 
+            color: white; 
+        }
+        .btn-secondary { 
+            background-color: #6c757d; 
+            color: white; 
+        }
+        .btn-danger { 
+            background-color: #dc3545; 
+            color: white; 
+        }
+        .btn:hover { 
+            opacity: 0.9; 
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>IOT Safehorizons</h1>
+        <div class="navbar-actions">
+            <a th:href="@{/operator/dashboard}">Dashboard</a>
+            <a th:href="@{/operator/terminal}">Terminal SSH</a>
+            <a th:href="@{/operator/file-editor}" class="active">File Editor</a>
+            <span sec:authentication="name">Username</span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn-logout">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="card">
+            <h3>File Editor</h3>
+            
+            <div id="errorAlert" class="alert alert-danger" style="display: none;"></div>
+            <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label for="deviceId">Select Device</label>
+                <select id="deviceId" name="deviceId">
+                    <option value="">-- Select Device --</option>
+                    <option th:each="device : ${devices}" 
+                            th:value="${device.deviceId}" 
+                            th:text="${device.deviceName + ' (' + device.ipAddress + ')'}">Sample Device</option>
+                </select>
+            </div>
+            
+            <div class="editor-container">
+                <div class="editor-left">
+                    <div class="form-group">
+                        <label for="currentPath">Current Path</label>
+                        <div class="input-group">
+                            <input type="text" id="currentPath" name="currentPath" value="." />
+                            <button id="listFilesBtn" class="btn btn-secondary">List Files</button>
+                        </div>
+                    </div>
+                    
+                    <div class="file-list" id="fileListContainer">
+                        No files loaded yet. Select a device and click "List Files".
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filename">Filename</label>
+                        <input type="text" id="filename" name="filename" placeholder="Enter filename (e.g., hello.txt)">
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="loadFileBtn" class="btn btn-secondary">Load File</button>
+                        <button id="newFileBtn" class="btn btn-primary">New File</button>
+                        <button id="runFileBtn" class="btn btn-success">Run File</button>
+                    </div>
+                </div>
+                
+                <div class="editor-right">
+                    <div class="form-group">
+                        <label for="fileContent">File Content</label>
+                        <textarea id="fileContent" name="fileContent" placeholder="Enter file content here..."></textarea>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="saveFileBtn" class="btn btn-primary">Save File</button>
+                    </div>
+                    
+                    <label>Output</label>
+                    <div class="output" id="outputContainer">
+                        No output yet.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deviceIdSelect = document.getElementById('deviceId');
+            const currentPathInput = document.getElementById('currentPath');
+            const filenameInput = document.getElementById('filename');
+            const fileContentTextarea = document.getElementById('fileContent');
+            const fileListContainer = document.getElementById('fileListContainer');
+            const outputContainer = document.getElementById('outputContainer');
+            const errorAlert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+            
+            // Buttons
+            const listFilesBtn = document.getElementById('listFilesBtn');
+            const loadFileBtn = document.getElementById('loadFileBtn');
+            const newFileBtn = document.getElementById('newFileBtn');
+            const saveFileBtn = document.getElementById('saveFileBtn');
+            const runFileBtn = document.getElementById('runFileBtn');
+            
+            // Thêm nút Append và Check Tools
+            const btnGroup = document.querySelector('.editor-right .btn-group');
+            
+            // Tạo nút Append
+            const appendFileBtn = document.createElement('button');
+            appendFileBtn.id = 'appendFileBtn';
+            appendFileBtn.className = 'btn btn-secondary';
+            appendFileBtn.textContent = 'Append to File';
+            btnGroup.appendChild(appendFileBtn);
+            
+            // Tạo nút Check Tools
+            const checkToolsBtn = document.createElement('button');
+            checkToolsBtn.id = 'checkToolsBtn';
+            checkToolsBtn.className = 'btn btn-info';
+            checkToolsBtn.textContent = 'Check Tools';
+            btnGroup.appendChild(checkToolsBtn);
+            
+            // Show error message
+            function showError(message) {
+                errorAlert.textContent = message;
+                errorAlert.style.display = 'block';
+                successAlert.style.display = 'none';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Show success message
+            function showSuccess(message) {
+                successAlert.textContent = message;
+                successAlert.style.display = 'block';
+                errorAlert.style.display = 'none';
+                setTimeout(() => {
+                    successAlert.style.display = 'none';
+                }, 3000);
+            }
+            
+            // List files in directory
+            listFilesBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const path = currentPathInput.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                fileListContainer.textContent = 'Loading files...';
+                
+                fetch('/operator/list-files', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        path: path
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fileListContainer.textContent = data.result;
+                    } else {
+                        showError(data.message);
+                        fileListContainer.textContent = 'Error loading files. See error message above.';
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    fileListContainer.textContent = 'Error loading files. See error message above.';
+                });
+            });
+            
+            // Load file content
+            loadFileBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const filename = filenameInput.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                if (!filename) {
+                    showError('Please enter a filename');
+                    return;
+                }
+                
+                fileContentTextarea.value = 'Loading file...';
+                
+                fetch('/operator/edit-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        filename: filename
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fileContentTextarea.value = data.content;
+                        showSuccess('File loaded successfully');
+                    } else {
+                        showError(data.message);
+                        fileContentTextarea.value = '';
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    fileContentTextarea.value = '';
+                });
+            });
+            
+            // Create new file
+            newFileBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const filename = filenameInput.value;
+                const content = fileContentTextarea.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                if (!filename) {
+                    showError('Please enter a filename');
+                    return;
+                }
+                
+                fetch('/operator/create-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        filename: filename,
+                        content: content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('File created successfully');
+                        // Refresh file list
+                        listFilesBtn.click();
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                });
+            });
+            
+            // Save file
+            saveFileBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const filename = filenameInput.value;
+                const content = fileContentTextarea.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                if (!filename) {
+                    showError('Please enter a filename');
+                    return;
+                }
+                
+                fetch('/operator/save-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        filename: filename,
+                        content: content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('File saved successfully');
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                });
+            });
+            
+            // Check available tools
+            checkToolsBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                outputContainer.textContent = 'Checking available tools...';
+                
+                fetch('/operator/check-tools', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let toolsInfo = 'Available tools:\n';
+                        let availableTools = data.availableTools;
+                        
+                        for (let tool in availableTools) {
+                            toolsInfo += `${tool}: ${availableTools[tool] ? '✅ Installed' : '❌ Not installed'}\n`;
+                        }
+                        
+                        outputContainer.textContent = toolsInfo;
+                    } else {
+                        showError(data.message);
+                        outputContainer.textContent = 'Error checking tools. See error message above.';
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    outputContainer.textContent = 'Error checking tools. See error message above.';
+                });
+            });
+            
+            // Append to file
+            appendFileBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const filename = filenameInput.value;
+                const content = fileContentTextarea.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                if (!filename) {
+                    showError('Please enter a filename');
+                    return;
+                }
+                
+                fetch('/operator/append-to-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        filename: filename,
+                        content: content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('Content appended to file successfully');
+                        // Reload file to show updated content
+                        loadFileBtn.click();
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                });
+            });
+            
+            // Run file automatically checks the file extension and executes accordingly
+            runFileBtn.addEventListener('click', function() {
+                const deviceId = deviceIdSelect.value;
+                const filename = filenameInput.value;
+                
+                if (!deviceId) {
+                    showError('Please select a device first');
+                    return;
+                }
+                
+                if (!filename) {
+                    showError('Please enter a filename');
+                    return;
+                }
+                
+                outputContainer.textContent = 'Running file...';
+                
+                fetch('/operator/run-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        deviceId: deviceId,
+                        filename: filename
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        outputContainer.textContent = data.result;
+                        showSuccess('File executed successfully');
+                    } else {
+                        showError(data.message);
+                        outputContainer.textContent = 'Error running file. See error message above.';
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    outputContainer.textContent = 'Error running file. See error message above.';
+                });
+            });
+            
+            // Check tools on device selection change
+            deviceIdSelect.addEventListener('change', function() {
+                if (deviceIdSelect.value) {
+                    // Automatically check tools when device is selected
+                    checkToolsBtn.click();
+                }
+            });
+            
+            // File list item click handler to load file
+            fileListContainer.addEventListener('click', function(e) {
+                // Try to extract filename from clicked line if it's a file entry
+                const line = e.target.textContent;
+                const match = line.match(/\s+(\S+)$/); // Match last word in line
+                
+                if (match && match[1] && !match[1].startsWith('.') && !line.startsWith('d')) {
+                    filenameInput.value = match[1];
+                    loadFileBtn.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

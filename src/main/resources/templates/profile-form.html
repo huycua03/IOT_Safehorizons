@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Profile - IOT Safehorizons</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f5f5; }
+        .navbar { background-color: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 22px; font-weight: 500; }
+        .navbar-actions { display: flex; align-items: center; }
+        .navbar-actions a { color: white; margin-left: 15px; text-decoration: none; }
+        .navbar-actions form { margin-left: 15px; }
+        .btn-logout { background-color: transparent; border: 1px solid white; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .btn-logout:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .content { padding: 20px; max-width: 800px; margin: 20px auto; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .card h3 { margin-bottom: 15px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input[type="text"], select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-primary { background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary:hover { opacity: 0.9; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .empty-message { text-align: center; padding: 30px; color: #777; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>IOT Safehorizons</h1>
+        <div class="navbar-actions">
+            <a th:href="@{/teamlead/dashboard}">Dashboard</a>
+            <a th:href="@{/teamlead/device/list}">Devices</a>
+            <a th:href="@{/teamlead/devicegroup/list}">Device Groups</a>
+            <a th:href="@{/teamlead/commandlist/list}">Command Lists</a>
+            <a th:href="@{/teamlead/profile/list}">Profiles</a>
+            <span sec:authentication="name">Username</span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn-logout">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="card">
+            <h3>Create Profile</h3>
+            
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+            
+            <form th:action="@{/teamlead/profile/create}" method="post">
+                <div class="form-group">
+                    <label for="profileName">Profile Name</label>
+                    <input type="text" id="profileName" name="profileName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceGroupId">Device Group</label>
+                    <select id="deviceGroupId" name="deviceGroupId" required>
+                        <option value="">-- Select Device Group --</option>
+                        <option th:each="group : ${deviceGroups}" 
+                                th:value="${group.groupId}" 
+                                th:text="${group.groupName}">Sample Group</option>
+                    </select>
+                    <div th:if="${#lists.isEmpty(deviceGroups)}" class="empty-message">
+                        No device groups available. <a th:href="@{/teamlead/devicegroup/create}">Create a device group first</a>.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="commandListId">Command List</label>
+                    <select id="commandListId" name="commandListId" required>
+                        <option value="">-- Select Command List --</option>
+                        <option th:each="list : ${commandLists}" 
+                                th:value="${list.commandListId}" 
+                                th:text="${list.name}">Sample Commands</option>
+                    </select>
+                    <div th:if="${#lists.isEmpty(commandLists)}" class="empty-message">
+                        No command lists available. <a th:href="@{/teamlead/commandlist/create}">Create a command list first</a>.
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Create Profile</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html> 

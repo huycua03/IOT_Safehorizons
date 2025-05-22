@@ -16,4 +16,8 @@ public interface OperatorProfileRepository extends JpaRepository<OperatorProfile
     // Tìm tất cả OperatorProfile có profileId tương ứng
     @Query("SELECT op FROM OperatorProfile op WHERE op.profile.profileId = :profileId")
     List<OperatorProfile> findByProfileId(@Param("profileId") Integer profileId);
+    
+    // Tìm tất cả OperatorProfile có userId tương ứng
+    @Query("SELECT op FROM OperatorProfile op WHERE op.operator.user_id = :userId")
+    List<OperatorProfile> findByUserId(@Param("userId") Integer userId);
 }
